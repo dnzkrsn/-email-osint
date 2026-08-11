@@ -205,38 +205,38 @@ def ai_analyze():
     }
 
     prompt = f"""
-You are an email-intelligence analysis assistant.
+ You are an email-intelligence analysis assistant.
 
-Analyze ONLY the public-source investigation data supplied below.
+ Analyze ONLY the public-source investigation data supplied below.
 
-Your job is to:
-1. Summarize the strongest findings.
-2. Explain what each finding actually means.
-3. Separate verified technical facts from unverified heuristics.
-4. Identify potentially interesting signals.
-5. Give an overall confidence level.
-6. Suggest reasonable next PUBLIC-source checks.
-7. Never claim that a person has been identified unless the supplied evidence
-   actually proves that.
-8. Never invent names, phone numbers, addresses, passwords, private accounts,
-   credentials, IP addresses, or other information not present in the data.
+ Your job is to:
+ 1. Summarize the strongest findings.
+ 2. Explain what each finding actually means.
+ 3. Separate verified technical facts from unverified heuristics.
+ 4. Identify potentially interesting signals.
+ 5. Give an overall confidence level.
+ 6. Suggest reasonable next PUBLIC-source checks.
+ 7. Never claim that a person has been identified unless the supplied evidence
+    actually proves that.
+ 8. Never invent names, phone numbers, addresses, passwords, private accounts,
+    credentials, IP addresses, or other information not present in the data.
 
-Return a concise professional investigation report.
+ Return a concise professional investigation report.
 
-Structure your response with these sections:
+ Structure your response with these sections:
 
-OVERALL ASSESSMENT
-KEY FINDINGS
-TECHNICAL ANALYSIS
-IDENTITY SIGNALS
-CONFIDENCE
-RECOMMENDED PUBLIC CHECKS
-IMPORTANT LIMITATIONS
+ OVERALL ASSESSMENT
+ KEY FINDINGS
+ TECHNICAL ANALYSIS
+ IDENTITY SIGNALS
+ CONFIDENCE
+ RECOMMENDED PUBLIC CHECKS
+ IMPORTANT LIMITATIONS
 
-Investigation data:
+ Investigation data:
 
-{json.dumps(allowed_data, indent=2, default=str)}
-"""
+ {json.dumps(allowed_data, indent=2, default=str)}
+ """
 
     try:
         client = OpenAI(api_key=api_key)
@@ -252,6 +252,8 @@ Investigation data:
         })
 
     except Exception as e:
+        print("=== AI ANALYSIS ERROR ===", repr(e), flush=True)
+
         return jsonify({
             "success": False,
             "error": "AI analysis failed.",
