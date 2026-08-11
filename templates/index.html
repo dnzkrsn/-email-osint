@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Email OSINT</title>
+<style>
+:root { color-scheme: dark; }
+* { box-sizing:border-box; }
+body { margin:0; font-family:Inter,system-ui,sans-serif; background:#090b10; color:#f4f5f7; }
+main { max-width:900px; margin:auto; padding:48px 20px; }
+h1 { font-size:42px; margin:0 0 8px; }
+.sub { color:#9da3ad; margin-bottom:28px; }
+form { display:flex; gap:10px; }
+input { flex:1; padding:16px; border:1px solid #30343d; border-radius:12px; background:#11141b; color:white; font-size:16px; }
+button { padding:16px 22px; border:0; border-radius:12px; background:#fff; color:#111; font-weight:700; cursor:pointer; }
+.card { margin-top:20px; padding:20px; border:1px solid #282d36; border-radius:16px; background:#10131a; }
+.grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:14px; }
+.label { color:#8e96a3; font-size:13px; text-transform:uppercase; letter-spacing:.08em; }
+.value { margin-top:6px; font-size:18px; }
+pre { white-space:pre-wrap; word-break:break-word; color:#cbd2dc; }
+.ok { color:#7ee787; } .bad { color:#ff7b72; } .muted { color:#8e96a3; }
+</style>
+</head>
+<body>
+<main>
+  <h1>🔎 Email OSINT</h1>
+  <div class="sub">Public-information checker — no passwords or private account access.</div>
+  <form id="form">
+    <input id="email" type="email" placeholder="person@example.com" required>
+    <button>Check</button>
+  </form>
+  <div id="output"></div>
+</main>
+<script>
+const form = document.getElementById("form");
+const output = document.getElementById("output");
+
+function esc(v) {
+  return String(v ?? "").replace(/[&<>\"']/g, c => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"
+  }[c]));
+}
+
+form.addEventListener("submit", async e => {
+  e.preventDefault();
+  output.innerHTML = '<div class="card">Checking public information…</div>';
+  try {
+    const email = document.getElementById("email").value.trim();
+    const r = await fetch("/api/check?email=" + encodeURIComponent(email));
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || "Check failed");
+
+    const hints = d.name_hints.length
+      ? d.name_hints.map(x => `<div class="value">${esc(x.first || "")} ${esc(x.last || x.username || "")}<div class="muted">Unverified heuristic</div></div>`).join("")
+      : '<div class="value muted">No obvious name pattern</div>';
+
+    const gh = d.github_public_search;
+    output.innerHTML = `
+      <div class="card">
+        <div class="grid">
+          <div><div class="label">Email</div><div class="value">${esc(d.email)}</div></div>
+          <div><div class="label">Syntax</div><div class="value ok">Valid</div></div>
+          <div><div class="label">Domain</div><div class="value">${esc(d.domain.domain)}</div></div>
+          <div><div class="label">Resolves</div><div class="value">${d.domain.resolves ? '<span class="ok">Yes</span>' : '<span class="bad">No</span>'}</div></div>
+          <div><div class="label">Disposable</div><div class="value">${d.domain.disposable ? '<span class="bad">Likely</span>' : '<span class="ok">Not detected</span>'}</div></div>
+          <div><div class="label">Gravatar</div><div class="value">${d.gravatar.found ? '<span class="ok">Found</span>' : 'Not found'}</div></div>
+        </div>
+      </div>
+      <div class="card"><div class="label">Possible name / username hints</div>${hints}</div>
+      <div class="card">
+        <div class="label">Public GitHub search</div>
+        <div class="value">${gh.available ? esc(gh.total_count) + " public search result(s)" : "Unavailable"}</div>
+        ${gh.users?.length ? gh.users.map(u => `<div class="value"><a href="${esc(u.profile)}" target="_blank" rel="noopener">${esc(u.login)}</a></div>`).join("") : ""}
+      </div>
+      <div class="card"><div class="label">Raw result</div><pre>${esc(JSON.stringify(d,null,2))}</pre></div>
+    `;
+  } catch (err) {
+    output.innerHTML = `<div class="card bad">${esc(err.message)}</div>`;
+  }
+});
+</script>
+</body>
+</html>
