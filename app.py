@@ -163,5 +163,100 @@ def api_check():
                  "No passwords, private account data, credential stuffing, login bypasses, or private breach records are queried."]
     })
 
+# ==============================
+# AI INTELLIGENCE ANALYSIS
+# ==============================
+
+@app.post("/api/ai-analyze")
+def ai_analyze():
+    import os
+
+    try:
+        from openai import OpenAI
+    except ImportError:
+        return jsonify({
+            "error": "OpenAI package is not installed. Add openai to requirements.txt."
+        }), 500
+
+    api_key = os.environ.get("OPENAI_API_KEY")
+
+    if not api_key:
+        return jsonify({
+            "error": "OPENAI_API_KEY is not configured on the server."
+        }), 500
+
+    data = request.get_json(silent=True) or {}
+
+    if not data:
+        return jsonify({"error": "No investigation data supplied."}), 400
+
+    # Only analyze information already collected by this application.
+    allowed_data = {
+        "email": data.get("email"),
+        "valid": data.get("valid"),
+        "local_part": data.get("local_part"),
+        "domain": data.get("domain"),
+        "rdap": data.get("rdap"),
+        "name_hints": data.get("name_hints"),
+        "gravatar": data.get("gravatar"),
+        "github_public_search": data.get("github_public_search"),
+        "risk": data.get("risk"),
+        "public_search_links": data.get("public_search_links")
+    }
+
+    prompt = f"""
+You are an email-intelligence analysis assistant.
+
+Analyze ONLY the public-source investigation data supplied below.
+
+Your job is to:
+1. Summarize the strongest findings.
+2. Explain what each finding actually means.
+3. Separate verified technical facts from unverified heuristics.
+4. Identify potentially interesting signals.
+5. Give an overall confidence level.
+6. Suggest reasonable next PUBLIC-source checks.
+7. Never claim that a person has been identified unless the supplied evidence
+   actually proves that.
+8. Never invent names, phone numbers, addresses, passwords, private accounts,
+   credentials, IP addresses, or other information not present in the data.
+
+Return a concise professional investigation report.
+
+Structure your response with these sections:
+
+OVERALL ASSESSMENT
+KEY FINDINGS
+TECHNICAL ANALYSIS
+IDENTITY SIGNALS
+CONFIDENCE
+RECOMMENDED PUBLIC CHECKS
+IMPORTANT LIMITATIONS
+
+Investigation data:
+
+{json.dumps(allowed_data, indent=2, default=str)}
+"""
+
+    try:
+        client = OpenAI(api_key=api_key)
+
+        response = client.responses.create(
+            model="gpt-5-mini",
+            input=prompt
+        )
+
+        return jsonify({
+            "success": True,
+            "analysis": response.output_text
+        })
+
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": "AI analysis failed.",
+            "details": str(e)
+        }), 500
+
 if __name__=="__main__":
     app.run(host="0.0.0.0",port=5000,debug=False)
