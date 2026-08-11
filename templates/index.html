@@ -5,7 +5,7 @@
 :root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,sans-serif;background:#07090d;color:#f5f7fa}
 main{max-width:1050px;margin:auto;padding:42px 18px}.hero{padding:10px 0 28px}h1{font-size:clamp(38px,8vw,64px);margin:0 0 8px}.sub{color:#9aa3b1;font-size:17px}
 form{display:flex;gap:10px;margin-top:26px}input{flex:1;min-width:0;padding:17px;border:1px solid #303641;border-radius:14px;background:#10141b;color:white;font-size:17px}
-button{padding:17px 24px;border:0;border-radius:14px;background:#fff;color:#0b0d11;font-weight:800;cursor:pointer}.card{margin-top:16px;padding:20px;border:1px solid #282e38;border-radius:18px;background:#0f131a}
+button{padding:17px 24px;border:0;border-radius:14px;background:#fff;color:#0b0d11;font-weight:800;cursor:pointer}.card{margin-top:16px;padding:20px;border:1px solid #282e38;border-radius:18px;background:#10141b}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}.label{color:#87919f;font-size:12px;text-transform:uppercase;letter-spacing:.1em}.value{margin-top:6px;font-size:18px}
 .ok{color:#78e08f}.bad{color:#ff7676}.muted{color:#8993a2}.pill{display:inline-block;padding:7px 11px;border:1px solid #343b47;border-radius:999px;margin:5px 5px 0 0}.links a{color:#c8d0ff;text-decoration:none}
 details{margin-top:16px}summary{cursor:pointer;font-weight:700}pre{white-space:pre-wrap;word-break:break-word;color:#cbd3df;font-size:12px}
@@ -24,7 +24,7 @@ const list=(a)=>a&&a.length?a.map(x=>`<span class="pill">${esc(typeof x==="strin
 form.addEventListener("submit",async e=>{e.preventDefault();out.innerHTML='<div class="card">Running public-source checks…</div>';
 try{let r=await fetch("/api/check?email="+encodeURIComponent(document.getElementById("email").value.trim())),d=await r.json();if(!r.ok)throw Error(d.error||"Check failed");
 let risk=d.risk,gh=d.github_public_search,rd=d.rdap,dom=d.domain,hints=d.name_hints;
-let ghhtml=gh.users?.length?gh.users.map(u=>`<div class="value"><a href="${esc(u.profile)}" target="_blank" rel="noopener">${esc(u.login)}</a></div>`).join(""):'<span class="muted">No public GitHub users returned</span>';
+let ghhtml=gh.users?.length?gh.users.map(u=>`<div class="value"><a href="${esc(u.profile)}" target="_blank" rel="noopener">${esc(u.login)}</a></div>`).join(""):'<span class="muted">No public GitHub users found</span>';
 let social=Object.entries(d.public_search_links.social_username||{}).map(([n,u])=>`<a class="pill" href="${esc(u)}" target="_blank" rel="noopener">${esc(n)}</a>`).join("");
 let searches=Object.entries(d.public_search_links).filter(([k,v])=>k!=="social_username"&&v).map(([k,v])=>`<a class="pill" href="${esc(v)}" target="_blank" rel="noopener">${esc(k.replaceAll("_"," "))}</a>`).join("");
 out.innerHTML=`
@@ -36,12 +36,26 @@ out.innerHTML=`
 <div><div class="label">DNS</div><div class="value">${dom.resolves?'<span class="ok">Resolves</span>':'<span class="bad">No resolution</span>'}</div></div>
 <div><div class="label">Gravatar</div><div class="value">${d.gravatar.found?'<span class="ok">Found</span>':'Not found'}</div></div>
 </div></div>
-<div class="card"><div class="label">Risk / reputation signal</div><div class="score">${risk.score}/100 <span class="value">${esc(risk.label)}</span></div><div class="bar"><i style="--w:${risk.score}%"></i></div><div class="muted">${risk.reasons.length?risk.reasons.map(esc).join(" • "):"No elevated signals detected"}</div></div>
-<div class="card"><div class="label">Possible identity / username hints</div>${hints.length?hints.map(x=>`<div class="value">${esc(x.first||"")} ${esc(x.last||x.username||"")}<div class="muted">Unverified heuristic</div></div>`).join(""):'<div class="muted">None</div>'}</div>
-<div class="card"><div class="label">DNS security</div><div class="value">MX</div>${list(dom.mx)}<div class="value">SPF</div>${list(dom.spf)}<div class="value">DMARC</div>${list(dom.dmarc)}<div class="value">A / AAAA</div>${list(dom.a)} ${list(dom.aaaa)}</div>
-<div class="card"><div class="label">Domain registration (RDAP)</div><div class="grid"><div><div class="label">Registrar</div><div class="value">${rd.registrar?.length?esc(rd.registrar.join(", ")):"Unavailable"}</div></div><div><div class="label">Registration</div><div class="value">${esc(rd.events?.registration||"Unavailable")}</div></div><div><div class="label">Expiration</div><div class="value">${esc(rd.events?.expiration||"Unavailable")}</div></div></div></div>
+<div class="card"><div class="label">Risk / reputation signal</div><div class="score">${risk.score}/100 <span class="value">${esc(risk.label)}</span></div><div class="bar"><i style="--w:${risk.score}%"></i></div></div>
+<div class="card"><div class="label">Possible identity / username hints</div>${hints.length?hints.map(x=>`<div class="value">${esc(x.first||"")} ${esc(x.last||x.username||"")}<div class="muted">Unverified hints from public sources</div></div>`).join(""):'<span class="muted">None found</span>'}</div>
+<div class="card"><div class="label">DNS security</div><div class="value">MX</div>${list(dom.mx)}<div class="value">SPF</div>${list(dom.spf)}<div class="value">DMARC</div>${list(dom.dmarc)}<div class="value">CAA</div>${list(dom.caa)}</div>
+<div class="card"><div class="label">Domain registration (RDAP)</div><div class="grid"><div><div class="label">Registrar</div><div class="value">${rd.registrar?.length?esc(rd.registrar.join(", ")):"Unknown"}</div></div><div><div class="label">Created</div><div class="value">${rd.created?esc(rd.created):"Unknown"}</div></div></div></div>
 <div class="card"><div class="label">Public GitHub</div><div class="value">${esc(gh.total_count)} result(s)</div>${ghhtml}</div>
-<div class="card links"><div class="label">Public search shortcuts</div><div class="value">${searches}</div><div class="label" style="margin-top:18px">Username searches</div><div class="value">${social||'<span class="muted">No username available</span>'}</div></div>
+<div class="card links"><div class="label">Public search shortcuts</div><div class="value">${searches}</div><div class="label" style="margin-top:18px">Username searches</div><div class="value">${social}</div></div>
+<div class="card">
+  <div class="ai-head">
+    <div>
+      <div class="label">AI Intelligence Analysis</div>
+      <div class="muted" style="margin-top:6px">
+        AI analyzes only the public-source results collected above.
+      </div>
+    </div>
+    <button id="aiButton" class="ai-button">Run AI analysis</button>
+  </div>
+
+  <div id="aiReport" class="ai-report"></div>
+  <div id="aiError" class="ai-error"></div>
+</div>
 <div class="card"><details><summary>Raw JSON</summary><pre>${esc(JSON.stringify(d,null,2))}</pre></details></div>`;
 }catch(err){out.innerHTML=`<div class="card bad">${esc(err.message)}</div>`}});
 </script></body></html>
