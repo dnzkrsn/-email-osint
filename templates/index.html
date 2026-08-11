@@ -21,6 +21,38 @@ details{margin-top:16px}summary{cursor:pointer;font-weight:700}pre{white-space:p
 const form=document.getElementById("form"),out=document.getElementById("output");
 const esc=v=>String(v??"").replace(/[&<>\"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const list=(a)=>a&&a.length?a.map(x=>`<span class="pill">${esc(typeof x==="string"?x:(x.host||JSON.stringify(x)))}</span>`).join(""):'<span class="muted">None found</span>';
+async function runAI(d, button, report, errorBox) {
+    button.disabled = true;
+    button.textContent = "AI analyzing…";
+    report.textContent = "Analyzing the collected public-source evidence…";
+    errorBox.textContent = "";
+
+    try {
+        const r = await fetch("/api/ai-analyze", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(d)
+        });
+
+        const data = await r.json();
+
+        if (!r.ok || !data.success) {
+            throw Error(data.error || "AI analysis failed");
+        }
+
+        report.textContent = data.analysis || "No analysis returned.";
+
+    } catch (err) {
+        report.textContent = "";
+        errorBox.textContent = err.message;
+
+    } finally {
+        button.disabled = false;
+        button.textContent = "Run AI analysis";
+    }
+}
 form.addEventListener("submit",async e=>{e.preventDefault();out.innerHTML='<div class="card">Running public-source checks…</div>';
 try{let r=await fetch("/api/check?email="+encodeURIComponent(document.getElementById("email").value.trim())),d=await r.json();if(!r.ok)throw Error(d.error||"Check failed");
 let risk=d.risk,gh=d.github_public_search,rd=d.rdap,dom=d.domain,hints=d.name_hints;
@@ -57,5 +89,6 @@ out.innerHTML=`
   <div id="aiError" class="ai-error"></div>
 </div>
 <div class="card"><details><summary>Raw JSON</summary><pre>${esc(JSON.stringify(d,null,2))}</pre></details></div>`;
+const aiBtn=document.getElementById("aiButton"),aiRpt=document.getElementById("aiReport"),aiErr=document.getElementById("aiError");aiBtn.addEventListener("click",()=>runAI(d,aiBtn,aiRpt,aiErr));
 }catch(err){out.innerHTML=`<div class="card bad">${esc(err.message)}</div>`}});
 </script></body></html>
