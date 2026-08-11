@@ -27,9 +27,8 @@ let latestInvestigation = null;
 
 form.addEventListener("submit",async e=>{e.preventDefault();out.innerHTML='<div class="card">Running public-source checks…</div>';
 try{let r=await fetch("/api/check?email="+encodeURIComponent(document.getElementById("email").value.trim())),d=await r.json();if(!r.ok)throw Error(d.error||"Check failed");
-let risk=d.risk,gh=d.github_public_search,rd=d.rdap,dom=d.domain,hints=d.name_hints;
-// keep a copy for AI analysis
 latestInvestigation = d;
+let risk=d.risk,gh=d.github_public_search,rd=d.rdap,dom=d.domain,hints=d.name_hints;
 
 let ghhtml=gh.users?.length?gh.users.map(u=>`<div class="value"><a href="${esc(u.profile)}" target="_blank" rel="noopener">${esc(u.login)}</a></div>`).join(""):'<span class="muted">No public GitHu[...]
 let social=Object.entries(d.public_search_links.social_username||{}).map(([n,u])=>`<a class="pill" href="${esc(u)}" target="_blank" rel="noopener">${esc(n)}</a>`).join("");
