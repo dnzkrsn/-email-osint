@@ -89,6 +89,13 @@ out.innerHTML=`
   <div id="aiError" class="ai-error"></div>
 </div>
 <div class="card"><details><summary>Raw JSON</summary><pre>${esc(JSON.stringify(d,null,2))}</pre></details></div>`;
-const aiBtn=document.getElementById("aiButton"),aiRpt=document.getElementById("aiReport"),aiErr=document.getElementById("aiError");aiBtn.addEventListener("click",()=>runAI(d,aiBtn,aiRpt,aiErr));
+document.getElementById("aiButton").addEventListener("click", () => {
+    runAI(
+        d,
+        document.getElementById("aiButton"),
+        document.getElementById("aiReport"),
+        document.getElementById("aiError")
+    );
+});
 }catch(err){out.innerHTML=`<div class="card bad">${esc(err.message)}</div>`}});
 </script></body></html>
