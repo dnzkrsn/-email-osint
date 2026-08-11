@@ -1,28 +1,23 @@
-# Email OSINT
+# Email OSINT Pro
 
-A privacy-conscious email OSINT checker for publicly available information.
+A public-source email intelligence checker.
 
-## Features
-- Email syntax validation
-- Domain resolution and MX records
-- Disposable-email detection
-- Local-part name/username heuristics
-- Public Gravatar check
+## Checks
+- Email syntax normalization
+- Domain resolution and MX
+- SPF / DMARC / TXT / A / AAAA records
+- Disposable-domain detection
+- Common mail-provider classification
+- RDAP domain registration metadata
+- Public Gravatar presence
 - Public GitHub search
-- Browser UI + JSON API
+- Username-based public search shortcuts
+- Google/Bing exact-email search shortcuts
+- Simple risk/reputation signal
 
-## Run
-```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-python app.py
-```
-
-Open http://127.0.0.1:5000
-
-API:
-`/api/check?email=person@example.com`
+## Deploy
+Build: `pip install -r requirements.txt`
+Start: `gunicorn app:app --bind 0.0.0.0:$PORT`
 
 ## Safety
-This tool does not collect passwords, authentication tokens, private account data, or attempt credential stuffing, login bypasses, or access to breach databases. Results are leads, not proof of identity.
+Results are public-source leads, not proof of identity. The app does not request passwords, private account access, credential stuffing, login bypasses, or private breach records.
